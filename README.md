@@ -10,8 +10,12 @@ always succeeds, so it fits the criteria for a C++ destructor or Rust drop
 statement: it must not cause further problems of its own.
 
 However, this is not the case with [`close()`][3], which can fail under certain
-conditions. Because this failure must be handled in a context-specific way,
-[there is no general way to do this][4].
+conditions. Here's what the [C++ Core Guidelines][4] say about this:
+
+> Many have tried to write reliable code violating this rule for examples, such as a network connection that “refuses to close”. To the best of our knowledge nobody has found a general way of doing this. Occasionally, for very specific examples, you can get away with setting some state for future cleanup. For example, we might put a socket that does not want to close on a “bad socket” list, to be examined by a regular sweep of the system state. Every example we have seen of this is error-prone, specialized, and often buggy.
+
+The pattern presented in this work attempts to establish a general way of
+dealing with resources which may refuse to close.
 
 [1]: https://www.merriam-webster.com/dictionary/back%20talk
 [2]: http://man7.org/linux/man-pages/man3/free.3.html
