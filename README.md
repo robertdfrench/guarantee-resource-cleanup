@@ -1,4 +1,4 @@
-# Forced Cleanup Pattern in C
+# Guaranteed Cleanup Pattern in C
 RAII is not well suited for resources that might [back talk][1] when we try to
 close them. Instead, we look at a pattern where function pointers must be
 provided for each failure case, so that we can make a compile-time guarantee
@@ -16,6 +16,38 @@ conditions. Here's what the [C++ Core Guidelines][4] say about this:
 
 The pattern presented in this work attempts to establish a general way of
 dealing with resources which may refuse to close.
+
+### In-line Guarantees
+Consider this small program which forks and then prints a message delivered to
+parent from child:
+
+```c
+#include <unistd.h>
+#include <sys/errno.h>
+#include <sys/wait.h>
+
+int main() {
+	int fds[2];
+	pipe(fds);
+
+	pid_t pid = fork();
+	if (pid == 0) {
+		char message[14] = "Hello, World!";
+		write(fd[1], message, 14);
+	} else {
+		char message[14];
+		read(fd[0], message, 14);
+		printf("The child says '%s'\n", message);
+	}
+	return 0;
+}
+```
+
+There's a lot that can go wrong here. Each of `pipe`, `fork`, `write`, and
+`read` can fail and cause unanticipated results:
+
+* If `pipe` fails, the program won't print a useful message, but it will exit 0.
+* If either `fork` or `write` fails, the program could hang forever attempting to read from a descriptor to which no data will ever be written.
 
 [1]: https://www.merriam-webster.com/dictionary/back%20talk
 [2]: http://man7.org/linux/man-pages/man3/free.3.html
